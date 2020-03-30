@@ -22,7 +22,7 @@ The project is splited in _data_ and _code_.
 _data_
 The data is stored in a seperate folder structure named data/seattle. This folder contains three csv files including the Airbnb 2017 Seattle dataset.
 _code_
-The code is stored in one .py file which is optically seperated in four parts - Comments, Question 1, Question 2 and Question 3. All parts work for their own and result in a figure containing the processed data. 
+The code is stored in one .py file which is optically seperated in fife parts - Comments, Definitions, Question 1, Question 2 and Question 3. All parts work for their own and result in a figure containing the processed data. 
 
 **Results**
 

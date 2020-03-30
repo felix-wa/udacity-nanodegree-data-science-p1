@@ -1,12 +1,15 @@
-    
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
-df_calendar = pd.read_csv('./Data/seattle/calendar.csv')
-df_listings = pd.read_csv('./Data/seattle/listings.csv')
-df_reviews = pd.read_csv('./Data/seattle/reviews.csv')
+## Analysis of different Questions on the Airbnb data 2017 from Seattle
+# Last update: 30.03.2020
+# Author: Felix Wagener
+
+
+# INPUT: Airbnb Data Seattle 2017 (three csv files) -> see Guthub
+
+# OUTPUT: three figures that present relations between different key variables
+
+
 
 #############################################################################
 ########################## MAIN QUESTIONS TO ANSWER #########################
@@ -28,6 +31,107 @@ df_reviews = pd.read_csv('./Data/seattle/reviews.csv')
 #
 ############################################################################
 ############################################################################
+
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# READ RELEVANT DATA
+#df_calendar = pd.read_csv('./Data/seattle/calendar.csv')
+df_listings = pd.read_csv('./Data/seattle/listings.csv')
+#df_reviews = pd.read_csv('./Data/seattle/reviews.csv')
+
+def create_bin_column(df, 
+                      column_to_bin, 
+                      number_of_bins
+                      ):
+    #INPUT:
+    # df - dataframe that contains a column of sortable elements by whom the bins 
+    # are created
+    # column_to_bin - column name, that is 'binned'
+    # number_of_bins - number of bins created
+    
+    #OUTPUT:
+    # column 'bin' where the elements are in by them the df can be grouped
+    
+    length_of_df = df[column_to_bin].shape[0]
+    Steplength = int(length_of_df/number_of_bins)
+    df['bin'] = np.nan
+    #sort values to be able to bin them
+    df = df.sort_values(by=[column_to_bin])
+    df = df.reset_index()
+    #every n-th element is filled, this is the was how bins are defined
+    for element in range(0, number_of_bins-1):
+        df['bin'][element*Steplength] = df[column_to_bin][element*Steplength]
+        #forwardfill fills up the spaces between the elements and defines the bins
+    df['bin'].ffill(axis = 0, inplace = True)
+    return df
+
+
+def create_scatter_plt_with_regression(df, 
+                                       x_column, 
+                                       y_column, 
+                                       col_scatter, 
+                                       col_reg,
+                                       reg_linetype,
+                                       title,
+                                       x_lab,
+                                       y_lab
+                                       ):
+    #INPUT:
+    # df - dataframe that contains columns for scatter plott and regression
+    # x_column - x-axis for plot
+    # y_column - y-axis for plot
+    # col_scatter - color of plots in scatterplot
+    # col_reg - coloer of line in regression
+    # reg_linetype - linetype of regression eg '-' or '--'
+    # title - Title of figure
+    # x_lab - lable of x-axis
+    # y_lab - lable of y-axis
+    
+    # OUTPUT
+    # Plot
+    plt.figure()
+    # set size of figure
+    plt.figure(num=None, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='k')
+    #select type of figure and data
+    plt.scatter(df[x_column], df[y_column], color = col_scatter)
+    # calculate relecant values for regression
+    axes = plt.gca()
+    m, b = np.polyfit(df[x_column], df[y_column], 1)
+    X_plot = np.linspace(axes.get_xlim()[0],axes.get_xlim()[1],100)
+    # label figure
+    plt.title(title)
+    plt.ylabel(y_lab)
+    plt.xlabel(x_lab)
+    # delete black box around figure
+    plt.box(False)
+    # delete ticks at the axis
+    plt.tick_params(axis='x', which='both', bottom=False, top=False, right = False, left = False, labelbottom=True) 
+    plt.tick_params(axis='y', which='both', bottom=False, top=False, right = False, left = False, labelbottom=False) 
+    #plot regression
+    plt.plot(X_plot, m*X_plot + b, reg_linetype, color = col_reg)
+    return plt
+
+
+def clean_dollar_valuen_for_one_element(df, 
+                                        row_name, 
+                                        index_from_iteration
+                                        ):
+    #INPUT
+    # df - dataframe where iteration runs over
+    # row_name - name of row where cleaning should take place
+    # index_from_iteration - chosen index from the iteration 
+    #OUTPUT
+    # price as int for further calculations
+    
+    # Delete '$' AND '.00' AND the ',' that seperates tousands
+    df.at[index_from_iteration,row_name] = int(row[row_name][1::][:-3].replace(",",""))
+    return int(row[row_name][1::][:-3].replace(",",""))
+    
+    
 
 #Question 1 remarks:
 
@@ -72,8 +176,6 @@ df_Q1_information =  pd.DataFrame(
         'review_scores_location',
         'review_scores_value'])
 
-print(df_Q1_information.head())
-
 # dropping of rows, drop all rows where we can not find at least 6 NON NA values
 # this step sorts out these rows, that have
 df_Q1_information.dropna(thresh = 6,axis=0, inplace = True);
@@ -96,66 +198,35 @@ df_Q1_information['review_scores_mean'] = mean
 # To reduce the number of dots in the figure -> create bins and aggregate
 #number of bins
 nbr_of_bins_Q1 = 30
+df_Q1_information = create_bin_column(df_Q1_information, 'length_of_desc', nbr_of_bins_Q1 )
 
-#every bin should have the same amount of elements
-length_of_df = df_Q1_information['length_of_desc'].shape[0]
-Steplength = int(length_of_df/nbr_of_bins_Q1)
-df_Q1_information['bin'] = np.nan
-#sort values to be able to bin them
-df_Q1_information = df_Q1_information.sort_values(by=['length_of_desc'])
-df_Q1_information = df_Q1_information.reset_index()
-#every n-th element is filled, this is the was how bins are defined
-for element in range(0, nbr_of_bins_Q1-1):
-    df_Q1_information['bin'][element*Steplength] = df_Q1_information['length_of_desc'][element*Steplength]
-#forwardfill fills up the spaces between the elements and defines the bins
-df_Q1_information['bin'].ffill(axis = 0, inplace = True)
-
-
-
-
-
-
-
-#including bins in dataframe
+#including bins in dataframe (equidistand bins)
 #df_Q1_information['bin'] = pd.cut(df_Q1_information['length_of_desc'], nbr_of_bins_Q1)
 
 #aggredating data for plt
-df_plt = df_Q1_information[['bin', 'length_of_desc', 'review_scores_mean']].groupby('bin').mean().dropna().reset_index()
+df_Q1_information = df_Q1_information[['bin', 'length_of_desc', 'review_scores_mean']].groupby('bin').mean().dropna().reset_index()
 ############################################################################
 # Interesting key numbers (nice to get a feeling of the avg size of an desc)
 # For comparison: A DinA4 page contains roughly 2500 letters
 #print('Average number of letters per description:',df_Q1_information['length_of_desc'].mean())
 ############################################################################
-#plot grafic with bins
-plt.figure()
-# set size of figure
-plt.figure(num=None, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='k')
-#set type of plt 
-plt.scatter(df_plt['length_of_desc'], df_plt['review_scores_mean'], color = 'black')
-# change limits of y-axis to make figure nice
-plt.ylim(9.1,10.1)
+# plotting the figure:
+create_scatter_plt_with_regression(df_Q1_information, 
+                                       'length_of_desc', 
+                                       'review_scores_mean', 
+                                       'black', 
+                                       'black',
+                                       '--',
+                                       'Influence of the length on the rating',
+                                       'Length in letters',
+                                       'Rating of accomodation'
+                                       )
 
-#Labeling
-plt.title('Influence of the length on the evaluation')
-plt.ylabel('Rating of accomodation')
-plt.xlabel('Length in letters')
-#delete black box around figure
-plt.box(False)
-# delete ticks at the axis
-plt.tick_params(axis='x', which='both', bottom=False, top=False, right = False, left = False, labelbottom=True) 
-plt.tick_params(axis='y', which='both', bottom=False, top=False, right = False, left = False, labelbottom=False) 
-# Add correlation line
-axes = plt.gca()
-# calculate relevant values for regression
-m, b = np.polyfit(df_plt['length_of_desc'], df_plt['review_scores_mean'], 1)
-# incline m gives an impression of the change
-#print('incline of regression in general:',m)
-# include regression in plt
-X_plot = np.linspace(axes.get_xlim()[0],axes.get_xlim()[1],100)
-plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
-#
+
+
 #############################################################################
-# THE NEXT PART USES ONLY THE review_accuracy score
+# THE NEXT PART USES ONLY THE review_accuracy score 
+# >>>>>>NEEDS TO BE REVIEWED START
 #df_plt = df_Q1_information[['bin', 'length_of_desc', 'review_scores_accuracy']].groupby('bin').mean().dropna().reset_index()
 ##plot grafic with bins
 #plt.figure()
@@ -172,9 +243,7 @@ plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
 #print('incline of regression in accuracy:',m)
 #X_plot = np.linspace(axes.get_xlim()[0],axes.get_xlim()[1],100)
 #plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
-
-
-
+# <<<<<<<NEEDS TO BE REVIEWED END
 ############################################################################
 ############################################################################
 ########################### QUESTION 2 #####################################
@@ -191,7 +260,7 @@ plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
 # 3 nights and the price per night is calculated as follows:
 # price_night = (3*price+cleaning_fee)/3/beds
 #
-# I do not seperate the amenities, I calculate the number of those
+# I calculate the number of the amenities, the type of amenities is not evaluated
 #
 # I deleted those accomodations where the price per night for each bed was higher
 # than 400 Dollar. The plott suggests that they are outliers.
@@ -211,20 +280,13 @@ df_Q2_information['cleaning_fee'] = df_Q2_information['cleaning_fee'].fillna('$0
 # we cna not use there rows in the analysis and there is no proper way to fill them
 df_Q2_information.dropna(subset = ['price', 'beds', 'amenities'],axis=0, inplace = True)
 
-#
 for index, row in df_Q2_information.iterrows():
     nbr_of_amen = int(len(row['amenities'].split(",")))
     df_Q2_information.set_value(index,'nbr_of_amenities',nbr_of_amen)
-    # Delete '$' AND '.00' AND the ',' that seperates tousands
-    price_no_dollar = int(row['price'][1::][:-3].replace(",",""))
-    #df_Q2_information.set_value(index,'price',price_no_dollar)
-    df_Q2_information.at[index,'price'] =price_no_dollar
     
-    # Delete '$' AND '.00' AND the ',' that seperates tousands
-    fee_no_dollar = int(row['cleaning_fee'][1::][:-3].replace(",",""))
-    #df_Q2_information.set_value(index,'cleaning_fee',fee_no_dollar)
-    df_Q2_information.at[index,'cleaning_fee'] = fee_no_dollar
-    
+    price_no_dollar = clean_dollar_valuen_for_one_element(df_Q2_information, 'price',index)
+    fee_no_dollar = clean_dollar_valuen_for_one_element(df_Q2_information, 'cleaning_fee',index)
+
     #calculate the relevant number (price per bed and night)
     nbr_of_beds = row['beds']
     price_per_bed__night = (price_no_dollar*3+fee_no_dollar)/3/nbr_of_beds
@@ -252,49 +314,22 @@ df_Q2_information = df_Q2_information[df_Q2_information['nbr_of_amenities']<nbr_
 #number of bins = max number of amenities
 nbr_of_bins_Q2 = 30
 #including bins in dataframe
-#every bin should have the same amount of elements
-length_of_df = df_Q2_information['price_per_bed_night'].shape[0]
-Steplength = int(length_of_df/nbr_of_bins_Q2)
-df_Q2_information['bin'] = np.nan
-#sort values to be able to bin them
-df_Q2_information = df_Q2_information.sort_values(by=['price_per_bed_night'])
-df_Q2_information = df_Q2_information.reset_index()
-#every n-th element is filled, this is the was how bins are defined
-for element in range(0, nbr_of_bins_Q2-1):
-    df_Q2_information['bin'][element*Steplength] = df_Q2_information['price_per_bed_night'][element*Steplength]
-#forwardfill fills up the spaces between the elements and defines the bins
-df_Q2_information['bin'].ffill(axis = 0, inplace = True)
+df_Q2_information = create_bin_column(df_Q2_information, 'price_per_bed_night', nbr_of_bins_Q2 )
 
-#equidistand bins (do not make sense... bins with less elements are weighted the same)
-#df_Q2_information['bin'] = pd.cut(df_Q2_information['price_per_bed_night'], nbr_of_bins_Q2)
 # grouping the information according to the bins
 df_Q2_information = df_Q2_information[['bin', 'nbr_of_amenities', 'price_per_bed_night']].groupby('bin').mean().dropna().reset_index()
 
 # plotting the figure:
-plt.figure()
-# setting the size of the figure
-plt.figure(num=None, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='k')
-# selecting type of figure
-plt.scatter(df_Q2_information['price_per_bed_night'], df_Q2_information['nbr_of_amenities'], color = 'black')
-
-#calculating regression values
-axes = plt.gca()
-m, b = np.polyfit(df_Q2_information['price_per_bed_night'], df_Q2_information['nbr_of_amenities'], 1)
-#print('incline of regression in accuracy Q2:',m)
-X_plot = np.linspace(axes.get_xlim()[0],axes.get_xlim()[1],100)
-#labeling the figure
-plt.title('Influence of number of amenities on price')
-plt.ylabel('Number of amenities')
-plt.xlabel('Price per person per night in US$')
-#deleting the black box around the figures
-plt.box(False)
-#deleting the ticks at the axis
-plt.tick_params(axis='x', which='both', bottom=False, top=False, right = False, left = False, labelbottom=True) 
-plt.tick_params(axis='y', which='both', bottom=False, top=False, right = False, left = False, labelbottom=False) 
-#blotting the regression
-plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
-
-
+create_scatter_plt_with_regression(df_Q2_information, 
+                                       'price_per_bed_night', 
+                                       'nbr_of_amenities', 
+                                       'black', 
+                                       'black',
+                                       '--',
+                                       'Influence of number of amenities on price',
+                                       'Price per person per night in US$',
+                                       'Number of amenities'
+                                       )
 
 ############################################################################
 ############################################################################
@@ -344,15 +379,8 @@ df_Q3_information['price_per_bed_night'] = 0
 
 # this loop cleans cleans the data and generates the necesarry key values
 for index, row in df_Q3_information.iterrows():
-    # Delete '$' AND '.00' AND the ',' that seperates tousands
-    price_no_dollar = int(row['price'][1::][:-3].replace(",",""))
-    #df_Q3_information.set_value(index,'price',price_no_dollar)
-    df_Q3_information.at[index,'price'] = price_no_dollar
-    
-    # Delete '$' AND '.00' AND the ',' that seperates tousands
-    fee_no_dollar = int(row['cleaning_fee'][1::][:-3].replace(",",""))
-    #df_Q3_information.set_value(index,'cleaning_fee',fee_no_dollar)
-    df_Q3_information.at[index,'cleaning_fee'] = fee_no_dollar
+    price_no_dollar = clean_dollar_valuen_for_one_element(df_Q3_information, 'price',index)
+    fee_no_dollar = clean_dollar_valuen_for_one_element(df_Q3_information, 'cleaning_fee',index)
     
     #calculate the relevant number (price per bed and night)
     nbr_of_beds = row['beds']
@@ -387,19 +415,8 @@ df_Q3_information = df_Q3_information[df_Q3_information['price_per_bed_night'] <
 # in the following we create bins to generate nice and clean plots
 #number of bins
 nbr_of_bins_Q3 = 30
-
-#every bin should have the same amount of elements
-length_of_df = df_Q3_information['price_per_bed_night'].shape[0]
-Steplength = int(length_of_df/nbr_of_bins_Q3)
-df_Q3_information['bin'] = np.nan
-#sort values to be able to bin them
-df_Q3_information = df_Q3_information.sort_values(by=['price_per_bed_night'])
-df_Q3_information = df_Q3_information.reset_index()
-#every n-th element is filled, this is the was how bins are defined
-for element in range(0, nbr_of_bins_Q3-1):
-    df_Q3_information['bin'][element*Steplength] = df_Q3_information['price_per_bed_night'][element*Steplength]
-#forwardfill fills up the spaces between the elements and defines the bins
-df_Q3_information['bin'].ffill(axis = 0, inplace = True) 
+#adding bins to df
+df_Q3_information = create_bin_column(df_Q3_information, 'price_per_bed_night', nbr_of_bins_Q3 )
 
 #equidistand bins (do not make sense... bins with less elements are weighted the same)
 #df_Q3_information['bin'] = pd.cut(df_Q3_information['price_per_bed_night'], nbr_of_bins_Q3)
@@ -408,30 +425,16 @@ df_Q3_information['bin'].ffill(axis = 0, inplace = True)
 df_Q3_information = df_Q3_information[['bin', 'price_per_bed_night', 'review_scores_mean']].groupby('bin').mean().dropna().reset_index()
 
 # create figure
-plt.figure()
-# set size of figure
-plt.figure(num=None, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='k')
-#select type of figure and data
-plt.scatter(df_Q3_information['price_per_bed_night'], df_Q3_information['review_scores_mean'], color = 'black')
-# calculate relecant values for regression
-axes = plt.gca()
-m, b = np.polyfit(df_Q3_information['price_per_bed_night'], df_Q3_information['review_scores_mean'], 1)
-#print('incline of regression in accuracy Q3:',m)
-X_plot = np.linspace(axes.get_xlim()[0],axes.get_xlim()[1],100)
-# label figure
-plt.title('Relation between rating and price')
-plt.ylabel('Rating of accomodation')
-plt.xlabel('Price per person per night in US$')
-# delete black box around figure
-plt.box(False)
-# delete ticks at the axis
-plt.tick_params(axis='x', which='both', bottom=False, top=False, right = False, left = False, labelbottom=True) 
-plt.tick_params(axis='y', which='both', bottom=False, top=False, right = False, left = False, labelbottom=False) 
-#plot regression
-plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
-
-
-
+create_scatter_plt_with_regression(df_Q3_information, 
+                                       'price_per_bed_night', 
+                                       'review_scores_mean', 
+                                       'black', 
+                                       'black',
+                                       '--',
+                                       'Relation between rating and price',
+                                       'Price per person per night in US$',
+                                       'Rating of accomodation'
+                                       )
 
 
 
