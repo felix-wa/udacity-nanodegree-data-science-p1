@@ -45,8 +45,7 @@ df_reviews = pd.read_csv('./Data/seattle/reviews.csv')
 # I dropped all rows, where more than 50% of the review data was missing, the 
 # other fields I filled with the mean of the other rows
 
-# I filled the data in equidistant bins to receive a nice plot that is not
-# overloaded
+# I grouped the data in bins, where every bin hat the same number of elements
 # 
 ############################################################################
 ############################################################################
@@ -96,9 +95,29 @@ for i, row in enumerate(df_Q1_information):
 df_Q1_information['review_scores_mean'] = mean
 # To reduce the number of dots in the figure -> create bins and aggregate
 #number of bins
-nbr_of_bins = 30
+nbr_of_bins_Q1 = 30
+
+#every bin should have the same amount of elements
+length_of_df = df_Q1_information['length_of_desc'].shape[0]
+Steplength = int(length_of_df/nbr_of_bins_Q1)
+df_Q1_information['bin'] = np.nan
+#sort values to be able to bin them
+df_Q1_information = df_Q1_information.sort_values(by=['length_of_desc'])
+df_Q1_information = df_Q1_information.reset_index()
+#every n-th element is filled, this is the was how bins are defined
+for element in range(0, nbr_of_bins_Q1-1):
+    df_Q1_information['bin'][element*Steplength] = df_Q1_information['length_of_desc'][element*Steplength]
+#forwardfill fills up the spaces between the elements and defines the bins
+df_Q1_information['bin'].ffill(axis = 0, inplace = True)
+
+
+
+
+
+
+
 #including bins in dataframe
-df_Q1_information['bin'] = pd.cut(df_Q1_information['length_of_desc'], nbr_of_bins)
+#df_Q1_information['bin'] = pd.cut(df_Q1_information['length_of_desc'], nbr_of_bins_Q1)
 
 #aggredating data for plt
 df_plt = df_Q1_information[['bin', 'length_of_desc', 'review_scores_mean']].groupby('bin').mean().dropna().reset_index()
@@ -233,7 +252,21 @@ df_Q2_information = df_Q2_information[df_Q2_information['nbr_of_amenities']<nbr_
 #number of bins = max number of amenities
 nbr_of_bins_Q2 = 30
 #including bins in dataframe
-df_Q2_information['bin'] = pd.cut(df_Q2_information['price_per_bed_night'], nbr_of_bins_Q2)
+#every bin should have the same amount of elements
+length_of_df = df_Q2_information['price_per_bed_night'].shape[0]
+Steplength = int(length_of_df/nbr_of_bins_Q2)
+df_Q2_information['bin'] = np.nan
+#sort values to be able to bin them
+df_Q2_information = df_Q2_information.sort_values(by=['price_per_bed_night'])
+df_Q2_information = df_Q2_information.reset_index()
+#every n-th element is filled, this is the was how bins are defined
+for element in range(0, nbr_of_bins_Q2-1):
+    df_Q2_information['bin'][element*Steplength] = df_Q2_information['price_per_bed_night'][element*Steplength]
+#forwardfill fills up the spaces between the elements and defines the bins
+df_Q2_information['bin'].ffill(axis = 0, inplace = True)
+
+#equidistand bins (do not make sense... bins with less elements are weighted the same)
+#df_Q2_information['bin'] = pd.cut(df_Q2_information['price_per_bed_night'], nbr_of_bins_Q2)
 # grouping the information according to the bins
 df_Q2_information = df_Q2_information[['bin', 'nbr_of_amenities', 'price_per_bed_night']].groupby('bin').mean().dropna().reset_index()
 
@@ -273,6 +306,8 @@ plt.plot(X_plot, m*X_plot + b, '--', color = 'black')
 #         accomodations are nice and adjust the price per person per night
 #
 #Question 3 remarks:
+
+# I grouped the elements in bins, where every bin has the same abount of elements
 
 #reading in relevant information
 df_Q3_information =  df_listings[['price'
@@ -352,8 +387,22 @@ df_Q3_information = df_Q3_information[df_Q3_information['price_per_bed_night'] <
 # in the following we create bins to generate nice and clean plots
 #number of bins
 nbr_of_bins_Q3 = 30
-#including bins in dataframe
-df_Q3_information['bin'] = pd.cut(df_Q3_information['price_per_bed_night'], nbr_of_bins_Q3)
+
+#every bin should have the same amount of elements
+length_of_df = df_Q3_information['price_per_bed_night'].shape[0]
+Steplength = int(length_of_df/nbr_of_bins_Q3)
+df_Q3_information['bin'] = np.nan
+#sort values to be able to bin them
+df_Q3_information = df_Q3_information.sort_values(by=['price_per_bed_night'])
+df_Q3_information = df_Q3_information.reset_index()
+#every n-th element is filled, this is the was how bins are defined
+for element in range(0, nbr_of_bins_Q3-1):
+    df_Q3_information['bin'][element*Steplength] = df_Q3_information['price_per_bed_night'][element*Steplength]
+#forwardfill fills up the spaces between the elements and defines the bins
+df_Q3_information['bin'].ffill(axis = 0, inplace = True) 
+
+#equidistand bins (do not make sense... bins with less elements are weighted the same)
+#df_Q3_information['bin'] = pd.cut(df_Q3_information['price_per_bed_night'], nbr_of_bins_Q3)
 
 # grouping the data by the bins
 df_Q3_information = df_Q3_information[['bin', 'price_per_bed_night', 'review_scores_mean']].groupby('bin').mean().dropna().reset_index()
