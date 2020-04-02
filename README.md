@@ -55,7 +55,7 @@ _Prepare _Data_:
 _Evaluate_ _the_ _Results_
    
     I presented figures where I aggregated the data to several bins. For the evaluation I played around with the size of the bins and checked whether the arguments I worked out hold or if I have to rethink them.
-   
+ 
 
 **Challenges and Learnings**
 
